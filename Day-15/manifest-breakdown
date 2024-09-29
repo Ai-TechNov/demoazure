@@ -1,0 +1,88 @@
+This script is a Bash script designed to automate the process of updating Kubernetes manifest files in a Git repository hosted on Azure DevOps. It pulls the repository, makes changes, commits, and pushes the updates back to the repository.
+
+Let's break down each step in detail:
+
+1. Shebang Line
+bash
+Copy code
+#!/bin/bash
+This specifies that the script should be executed using the Bash shell. It's a standard line for Bash scripts.
+
+2. Enable Debugging Mode
+bash
+Copy code
+set -x
+set -x is used to enable a debugging mode where each command is printed to the terminal before it is executed. This helps in tracking the script's flow and is useful for debugging.
+
+3. Set the Repository URL
+bash
+Copy code
+REPO_URL="https://<ACCESS-TOKEN>@dev.azure.com/<AZURE-DEVOPS-ORG-NAME>/voting-app/_git/voting-app"
+This line defines a variable, REPO_URL, that stores the Git repository URL.
+The URL includes an <ACCESS-TOKEN>, which is a placeholder for your Azure DevOps Personal Access Token (PAT). This token allows the script to authenticate and access the repository securely.
+<AZURE-DEVOPS-ORG-NAME> should be replaced with your Azure DevOps organization name.
+The repository being cloned is called voting-app.
+
+4. Clone the Git Repository
+bash
+Copy code
+git clone "$REPO_URL" /tmp/temp_repo
+This command clones the Git repository from the specified REPO_URL into a temporary directory located at /tmp/temp_repo.
+/tmp is often used for temporary files, and the directory temp_repo is created to hold the cloned repository.
+
+5. Navigate into the Cloned Repository
+bash
+Copy code
+cd /tmp/temp_repo
+The cd command changes the working directory to /tmp/temp_repo, where the repository has been cloned.
+This is necessary to run subsequent Git and file manipulation commands within the context of the repository.
+
+6. Modify the Kubernetes Manifest
+bash
+Copy code
+sed -i "s|image:.*|image: <ACR-REGISTRY-NAME>/$2:$3|g" k8s-specifications/$1-deployment.yaml
+This line uses the sed command (stream editor) to modify a Kubernetes manifest file, specifically a YAML file that defines a Kubernetes deployment.
+The expression s|image:.*|image: <ACR-REGISTRY-NAME>/$2:$3|g is a substitution pattern that does the following:
+image:.* matches any line that starts with image:, followed by any characters (.*).
+The matched part is replaced with image: <ACR-REGISTRY-NAME>/$2:$3.
+<ACR-REGISTRY-NAME> is a placeholder for your Azure Container Registry (ACR) name.
+$2 and $3 are positional parameters passed to the script, representing the image name (or microservice) and the version tag, respectively.
+k8s-specifications/$1-deployment.yaml refers to the deployment YAML file where $1 is another positional parameter that should contain the service or deployment name.
+
+7. Add the Modified Files to the Git Index
+bash
+Copy code
+git add .
+This command stages all modified files in the repository for commit. The dot (.) means that all changes in the current directory and its subdirectories will be staged.
+
+8. Commit the Changes
+bash
+Copy code
+git commit -m "Update Kubernetes manifest"
+This creates a Git commit with a message "Update Kubernetes manifest". This step records the changes in the local Git repository.
+
+9. Push the Changes to the Remote Repository
+bash
+Copy code
+git push
+This pushes the committed changes from the local repository back to the remote repository (Azure DevOps in this case).
+
+10. Cleanup the Temporary Directory
+bash
+Copy code
+rm -rf /tmp/temp_repo
+The rm -rf command deletes the /tmp/temp_repo directory and all of its contents.
+The -r flag stands for recursive, meaning it will delete all files and subdirectories, and the -f flag forces the deletion without prompting for confirmation.
+This step ensures that the temporary cloned repository is removed after the script finishes.
+Positional Parameters
+$1: Represents the name of the service or deployment, used to identify which deployment YAML file to modify.
+$2: Represents the image name or microservice name in the Azure Container Registry (ACR).
+$3: Represents the version tag of the container image, which will be inserted into the Kubernetes manifest.
+
+Summary
+This script automates the process of updating Kubernetes deployment manifests, including:
+
+Cloning a repository from Azure DevOps.
+Modifying the image field in a deployment manifest to update the container image and version.
+Committing and pushing the changes back to the repository.
+Cleaning up the temporary cloned repository.
